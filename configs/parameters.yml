@@ -1,0 +1,11 @@
+# configs/parameters.yml
+
+files:
+  food_drive_2023: "data/raw/Food Drive Data Collection 2023.csv"
+  food_drive_2024: "data/raw/Food Drive Data Collection 2024.csv"
+  edmonton_geo: "data/external/City_of_Edmonton_-_Neighbourhoods__Centroid_Point.csv"
+  train_config: "configs/train_config.yaml"
+  model: "models/polynomial_regression_model.pkl"
+  cleaned_data: "data/processed/EFD_Cleaned_dataset.csv"
+results:
+  evaluation: "predict/evaluation.png"

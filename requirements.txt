@@ -1,0 +1,10 @@
+pandas
+scikit-learn
+pickle-mixin
+numpy
+pyyaml
+matplotlib
+seaborn
+statsmodels
+squarify
+jinja2
