@@ -1,4 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 .venv/
+.gdrive/
+*.Identifier
 *.log
 *.tmp
-data/
+*.Identifier
