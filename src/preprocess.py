@@ -63,7 +63,7 @@ class DataLoader:
             subprocess.run(['dvc', 'push'], check=True)
             print("Data pushed to DVC successfully!")
         except subprocess.CalledProcessError as e:
-            print(f"DVC push failed: {e}")
+            print(f"DVC push failed: {e}") 
             
 class DataCleaner:
     def __init__(self, df_efd_2023=None, df_efd_2024=None):

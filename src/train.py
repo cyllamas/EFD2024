@@ -143,4 +143,4 @@ if __name__ == "__main__":
         data_loader.store_data(df_efd_cleaned, os.path.join(base_path, params["files"]["cleaned_data"]))
         print('===================== Data Preparation Completed! =====================')
     except Exception as e:
-        print(f"An error occurred during data preparation: {e}")
+        print(f"An error occurred during data preparation: {e}") 

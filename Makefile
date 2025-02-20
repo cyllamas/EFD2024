@@ -13,7 +13,7 @@ init:
 	$(PIP) install -r requirements.txt
 	@echo "Setup complete! Run 'source $(VENV)/bin/activate' to activate the environment."
 	@echo "Initializing DVC..."
-	$(VENV)/bin/dvc init
+	$(VENV)/bin/dvc init 
 
 train:
 	@echo "Running train.py..."
