@@ -2,6 +2,7 @@
 VENV=.venv
 PYTHON=$(VENV)/bin/python
 PIP=$(VENV)/bin/pip
+DVC=.dvc
 
 # Create virtual environment
 init:
@@ -11,6 +12,8 @@ init:
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
 	@echo "Setup complete! Run 'source $(VENV)/bin/activate' to activate the environment."
+	@echo "Initializing DVC..."
+	$(VENV)/bin/dvc init
 
 train:
 	@echo "Running train.py..."
@@ -28,7 +31,10 @@ predict:
 
 clean:
 	@echo "Cleaning up cache files..."
+	find . -type d -name "__pycache__" -exec rm -rf {} +
 	rm -rf $(VENV)
+	rm -rf $(DVC)
+	rm -rf .pytest_cache
 
 help:
 	@echo "Makefile commands:"

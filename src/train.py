@@ -3,6 +3,7 @@ import yaml
 import numpy as np
 import pandas as pd
 import pickle
+import subprocess
 from utils.open_config import load_config
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -108,7 +109,6 @@ class Trainer:
         with open(model_path, 'wb') as f:
             pickle.dump(polynomial_pipeline, f)
 
-
 if __name__ == "__main__":
     try:
         print('===================== Data Preparation Started! =====================')
@@ -139,7 +139,8 @@ if __name__ == "__main__":
         df_efd_cleaned = feature_engineer.feature_engineering()
 
         print('Performing Export of Cleaned Dataset Process ...')
-        df_efd_cleaned.to_csv(os.path.join(base_path, params["files"]["cleaned_data"]))
+        #df_efd_cleaned.to_csv(os.path.join(base_path, params["files"]["cleaned_data"]))
+        data_loader.store_data(df_efd_cleaned, os.path.join(base_path, params["files"]["cleaned_data"]))
         print('===================== Data Preparation Completed! =====================')
     except Exception as e:
         print(f"An error occurred during data preparation: {e}")

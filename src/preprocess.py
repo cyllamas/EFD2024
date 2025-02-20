@@ -2,12 +2,39 @@ import numpy as np
 import pandas as pd
 import os
 import yaml
+import subprocess
 from utils.open_config import load_config
 
 class DataLoader:
     def __init__(self, params, project_root):
         self.params = params
         self.project_root = project_root
+        self.dvc_init()
+        self.dvc_pull()
+
+    def dvc_init(self):
+        """
+        Initializes DVC and sets up the remote storage for Google Drive.
+        """
+        try:
+            subprocess.run(['dvc', 'remote', 'add', '-d', 'mygdrive', self.params['dvc']['gdrive_url']], check=True, cwd=self.project_root)
+            print("DVC remote directory added successfully.")
+            subprocess.run(['dvc', 'remote', 'modify', 'mygdrive', 'gdrive_client_id', self.params['dvc']['gdrive_client_id']], check=True, cwd=self.project_root)
+            subprocess.run(['dvc', 'remote', 'modify', 'mygdrive', 'gdrive_client_secret', self.params['dvc']['gdrive_client_secret']], check=True, cwd=self.project_root)
+            print("DVC remote modified with client credentials.")
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error during DVC initialization or remote setup: {e}")
+
+    def dvc_pull(self):
+        """
+        Runs 'dvc pull' to ensure required data files are up-to-date.
+        """
+        try:
+            subprocess.run(['dvc', 'pull'], check=True, cwd=self.project_root)
+            print("DVC pull completed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error running 'dvc pull': {e}")
 
     def load_data(self):
         """
@@ -23,6 +50,21 @@ class DataLoader:
 
         return df_efd_2023, df_efd_2024, df_edm_geo
 
+    def store_data(self, df, file_path):
+        """
+        Stores the dataframe to CSV and performs DVC push.
+        """
+        df.to_csv(file_path, index=False)
+        print(f"Data saved to {file_path}")
+        try:
+            subprocess.run(['dvc', 'add', file_path], check=True)
+            subprocess.run(['git', 'add', os.path.join(self.project_root, 'data', 'processed.dvc')], check=True)
+            subprocess.run(['dvc', 'config', 'core.autostage', 'true'], check=True)
+            subprocess.run(['dvc', 'push'], check=True)
+            print("Data pushed to DVC successfully!")
+        except subprocess.CalledProcessError as e:
+            print(f"DVC push failed: {e}")
+            
 class DataCleaner:
     def __init__(self, df_efd_2023=None, df_efd_2024=None):
         """
