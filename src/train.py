@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 import pickle
 import subprocess
+import mlflow
+import mlflow.sklearn
+import tempfile
 from utils.open_config import load_config
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -44,8 +47,11 @@ class Trainer:
         """
         X_train_transformed = self.preprocessor.fit_transform(self.X_train)
         X_test_transformed = self.preprocessor.transform(self.X_test)
+        mlflow.log_param("num_features", len(self.X_train.columns))
+        mlflow.log_param("cat_features", len(self.preprocessor.transformers_[1][1].categories_[0]))
+           
         return X_train_transformed, X_test_transformed
-
+    
     def train_polynomial_regression(self, X_train_transformed, X_test_transformed):
         """
         Trains a polynomial regression model using the transformed data.
@@ -68,6 +74,7 @@ class Trainer:
         grid_search = GridSearchCV(estimator=LinearRegression(), param_grid=param_grid, cv=3, scoring='r2', n_jobs=-1)
         grid_search.fit(X_train_poly, self.y_train)
         self.best_model = grid_search.best_estimator_  
+
         return self.best_model  
 
     def save_train_config(self, config_path):
@@ -77,11 +84,21 @@ class Trainer:
         best_params = self.best_model.get_params()
         
         config_data = {
-            'hyperparameters': best_params
+            'model_specs': {
+                'model_type': 'Polynomial Regression',  
+                'degree': 2  
+            },
+            'hyperparameters': {
+                'copy_X': best_params.get('copy_X', True),  
+                'fit_intercept': best_params.get('fit_intercept', True),  
+                'n_jobs': best_params.get('n_jobs', None),  
+                'positive': best_params.get('positive', False)  
+            }
         }
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, 'w') as f:
             yaml.dump(config_data, f)
+        mlflow.log_artifact(config_path)
 
     def save_model(self, model_path):
         """
@@ -108,6 +125,24 @@ class Trainer:
 
         with open(model_path, 'wb') as f:
             pickle.dump(polynomial_pipeline, f)
+
+        input_data = pd.DataFrame({
+            'Time Spent': [5.0],  # List format for single scalar value
+            'Number of Doors': [100.0],  # Converted to float
+            'Number of Routes': [10.0],  # Converted to float
+            'Ward': ["Beaumont Ward"],
+            'Year': [2025.0],  # Converted to float
+            'Total Volunteers': [50.0],  # Converted to float
+            'Donation Bags per Door': [3.0]  # Converted to float
+        })
+
+        try:
+            #input_example = input_data[0]
+            mlflow.sklearn.log_model(polynomial_pipeline, "polynomial_regression_model", input_example=input_data)
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+        #mlflow.sklearn.log_model(polynomial_pipeline, "polynomial_regression_model")
+        mlflow.log_artifact(model_path)
 
 if __name__ == "__main__":
     try:

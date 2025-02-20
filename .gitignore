@@ -11,4 +11,6 @@ src/utils/__pycache__
 *.tmp
 *.Identifier
 .dvc/
-
+mlruns/
+mlartifacts/
+predict/

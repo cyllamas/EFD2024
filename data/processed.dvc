@@ -2,4 +2,4 @@ outs:
 - md5: 15867d4cdf52f80841a4d0d949af26f2.dir
   nfiles: 1
   hash: md5
-  path: processed 
+  path: processed

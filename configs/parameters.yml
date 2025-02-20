@@ -9,3 +9,6 @@ files:
   cleaned_data: "data/processed/EFD_Cleaned_dataset.csv"
 results:
   evaluation: "predict/evaluation.png"
+setup:
+  allow_data_file_track: "Off"
+  allow_ml_model_track: "Off"

@@ -3,3 +3,6 @@ hyperparameters:
   fit_intercept: true
   n_jobs: null
   positive: false
+model_specs:
+  degree: 2
+  model_type: Polynomial Regression
