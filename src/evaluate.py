@@ -10,7 +10,7 @@ from mlflow import MlflowClient
 import random
 import string
 import time
-from utils.open_config import load_config, load_train_config
+from utils.open_config import get_default_params
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import learning_curve
 from train import Trainer
@@ -79,7 +79,7 @@ class Evaluator:
         print(f"   - R² Score: {test_metrics[3]:.4f}")
         print(f"   - Adjusted R²: {test_metrics[4]:.4f}")
 
-    def plot_evaluation(self, path):
+    def plot_evaluation(self, path, flag):
         """
         Plots several evaluation graphs, including:
         """
@@ -117,14 +117,15 @@ class Evaluator:
         plt.tight_layout()
         plt.savefig(path)
         plt.close()
-        mlflow.log_artifact(path)
+
+        if flag == "On":
+            mlflow.log_artifact(path)
 
 if __name__ == "__main__":
     try:
         print('===================== Model Development and Evaluation Started! =====================')
-        params, project_root = load_config()
-        model_params, project_root = load_train_config()
-        df_efd_cleaned = pd.read_csv(os.path.join(project_root, params["files"]["cleaned_data"]))
+        params = get_default_params()
+        df_efd_cleaned = pd.read_csv(os.path.join(params.project_root, params.cleaned_data))
 
         print('Performing Data Splitting Process ...')
         data_splitter = DataSplitter(df_efd_cleaned)
@@ -134,41 +135,35 @@ if __name__ == "__main__":
         trainer = Trainer(X_train, y_train, X_test, y_test)
         X_train_transformed, X_test_transformed = trainer.preprocess_data()
 
-        # Check if MLflow tracking is allowed
-        if params["setup"].get("allow_ml_model_track", "Off") == "On":
+        if params.allow_ml_model_track == "On":
             if mlflow.active_run():
                 mlflow.end_run()
 
-            def fetch_logged_data(run_id):
-                client = MlflowClient()
-                data = client.get_run(run_id).data
-                tags = {k: v for k, v in data.tags.items() if not k.startswith("mlflow.")}
-                artifacts = [f.path for f in client.list_artifacts(run_id, "model")]
-                return data.params, data.metrics, tags, artifacts
-
-            mlflow.sklearn.autolog(disable=True)
+            mlflow.sklearn.autolog(disable=True) # Manual input features due to error on training and testing df format after data transformation 
             run = mlflow.active_run()
             if run:
                 print("Active run_id: {}".format(run.info.run_id))
                 mlflow.end_run()
 
-            mlflow.set_tracking_uri("http://localhost:8080/") 
-            mlflow.set_experiment('Edmonton Food Drive App MLFlow')
-            experiment = mlflow.get_experiment_by_name("Edmonton Food Drive App MLFlow")
+            exp_name = params.mlflow_experiment_name
+            exp_url = params.mlflow_experiment_url
+            mlflow.set_tracking_uri(exp_url) 
+            mlflow.set_experiment(exp_name)
+            experiment = mlflow.get_experiment_by_name(exp_name)
 
             if experiment is None:
                 print("Experiment not found, creating a new one...")
-                experiment = mlflow.create_experiment("Edmonton Food Drive App MLFlow")
+                experiment = mlflow.create_experiment(exp_name)
 
             with mlflow.start_run(experiment_id=experiment.experiment_id) as run:
                 print("Started new run with ID: {}".format(run.info.run_id))
                 mlflow.log_params({
-                    "model": model_params["model_specs"]["model_type"],
-                    "degree": model_params["model_specs"]["degree"],
-                    "copy_X": model_params["hyperparameters"]["copy_X"],
-                    "fit_intercept": model_params["hyperparameters"]["fit_intercept"],
-                    "n_jobs": model_params["hyperparameters"]["n_jobs"],
-                    "positive": model_params["hyperparameters"]["positive"]
+                    "model": params.model_type,
+                    "degree": params.degree,
+                    "copy_X": params.copy_X,
+                    "fit_intercept": params.fit_intercept,
+                    "n_jobs": params.n_jobs,
+                    "positive": params.positive
                 })
 
                 print('Performing Model Training Process ...')
@@ -187,17 +182,17 @@ if __name__ == "__main__":
                     model_name="Polynomial Regression"
                 )
                 evaluator.print_metrics()
-                evaluator.plot_evaluation(os.path.join(project_root, params["results"]["evaluation"]))
+                print('Performing Model Evaluation Plot Process ...')
+                evaluator.plot_evaluation(os.path.join(params.project_root, params.evaluation_results), params.allow_ml_model_track)
 
+                print('Performing Save Config Process ...')
+                trainer.save_train_config(os.path.join(params.project_root, params.train_config), params.allow_ml_model_track)
                 print('Performing Model Download Process ...')
-                trainer.save_train_config(os.path.join(project_root, params["files"]["train_config"]))
-                trainer.save_model(os.path.join(project_root, params["files"]["model"]))
-                print(f'✅ Model saved: {os.path.join(project_root, params["files"]["model"])}')
+                trainer.save_model(os.path.join(params.project_root, params.model), params.allow_ml_model_track)
+                print(f'✅ Model saved: {os.path.join(params.project_root, params.model)}')
 
         else:
-            print("MLflow tracking is disabled as per the configuration (allow_ml_model_track is not 'On'). Proceeding without MLflow tracking.")
-
-            # Proceed with the rest of the steps without MLflow tracking
+            print("MLflow tracking is disabled (allow_ml_model_track = 'Off'). Proceeding without MLflow tracking.")
             print('Performing Model Training Process ...')
             X_train_poly, X_test_poly = trainer.train_polynomial_regression(X_train_transformed, X_test_transformed)
 
@@ -214,12 +209,14 @@ if __name__ == "__main__":
                 model_name="Polynomial Regression"
             )
             evaluator.print_metrics()
-            evaluator.plot_evaluation(os.path.join(project_root, params["results"]["evaluation"]))
+            print('Performing Model Evaluation Plot Process ...')
+            evaluator.plot_evaluation(os.path.join(params.project_root, params.evaluation_results), params.allow_ml_model_track)
 
+            print('Performing Save Config Process ...')
+            trainer.save_train_config(os.path.join(params.project_root, params.train_config), params.allow_ml_model_track)
             print('Performing Model Download Process ...')
-            trainer.save_train_config(os.path.join(project_root, params["files"]["train_config"]))
-            trainer.save_model(os.path.join(project_root, params["files"]["model"]))
-            print(f'✅ Model saved: {os.path.join(project_root, params["files"]["model"])}')
+            trainer.save_model(os.path.join(params.project_root, params.model), params.allow_ml_model_track)
+            print(f'✅ Model saved: {os.path.join(params.project_root, params.model)}')
         print('===================== Model Development and Evaluation completed! =====================')
     except Exception as e:
         print(f"An error occurred during model Development and evaluation: {e}")

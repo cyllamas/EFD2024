@@ -3,13 +3,12 @@ import pandas as pd
 import os
 import yaml
 import subprocess
-from utils.open_config import load_config
+from utils.open_config import get_default_params
 
 class DataLoader:
-    def __init__(self, params, project_root):
+    def __init__(self, params):
         self.params = params
-        self.project_root = project_root
-        if self.params["setup"]["allow_data_file_track"] == "On":
+        if self.params.allow_data_file_track == "On":
             self.dvc_init()
             self.dvc_pull()
 
@@ -18,39 +17,39 @@ class DataLoader:
         Initializes DVC and sets up the remote storage for Google Drive.
         Only runs if 'allow_data_file_track' is 'On'.
         """
-        if self.params["setup"]["allow_data_file_track"] == "On":
+        if self.params.allow_data_file_track == "On":
             try:
-                subprocess.run(['dvc', 'remote', 'add', '-d', 'mygdrive', self.params['dvc']['gdrive_url']], check=True, cwd=self.project_root)
+                subprocess.run(['dvc', 'remote', 'add', '-d', 'mygdrive', self.params.gdrive_url], check=True, cwd=self.params.project_root)
                 print("DVC remote directory added successfully.")
-                subprocess.run(['dvc', 'remote', 'modify', 'mygdrive', 'gdrive_client_id', self.params['dvc']['gdrive_client_id']], check=True, cwd=self.project_root)
-                subprocess.run(['dvc', 'remote', 'modify', 'mygdrive', 'gdrive_client_secret', self.params['dvc']['gdrive_client_secret']], check=True, cwd=self.project_root)
+                subprocess.run(['dvc', 'remote', 'modify', 'mygdrive', 'gdrive_client_id', self.params.gdrive_client_id], check=True, cwd=self.params.project_root)
+                subprocess.run(['dvc', 'remote', 'modify', 'mygdrive', 'gdrive_client_secret', self.params.gdrive_client_secret], check=True, cwd=self.params.project_root)
                 print("DVC remote modified with client credentials.")
             except subprocess.CalledProcessError as e:
                 print(f"Error during DVC initialization or remote setup: {e}")
         else:
-            print("DVC initialization is disabled (allow_data_file_track is Off). Skipping DVC setup.")
+            print("DVC tracking is disabled (allow_data_file_track = 'Off'). Skipping DVC setup.")
 
     def dvc_pull(self):
         """
         Runs 'dvc pull' to ensure required data files are up-to-date.
         Only runs if 'allow_data_file_track' is 'On'.
         """
-        if self.params["setup"]["allow_data_file_track"] == "On":
+        if self.params.allow_data_file_track == "On":
             try:
-                subprocess.run(['dvc', 'pull'], check=True, cwd=self.project_root)
+                subprocess.run(['dvc', 'pull'], check=True, cwd=self.params.project_root)
                 print("DVC pull completed successfully.")
             except subprocess.CalledProcessError as e:
                 print(f"Error running 'dvc pull': {e}")
         else:
-            print("DVC pull is disabled (allow_data_file_track is Off). Skipping DVC pull.")
+            print("DVC tracking is disabled (allow_data_file_track = 'Off'). Skipping DVC pull.")
 
     def load_data(self):
         """
         Loads data from CSV files for 2023 and 2024 Food Drive Data and City of Edmonton Geo data.
         """       
-        raw_data_path_2023 = os.path.join(self.project_root, self.params["files"]["food_drive_2023"])
-        raw_data_path_2024 = os.path.join(self.project_root, self.params["files"]["food_drive_2024"])
-        raw_data_path_geo = os.path.join(self.project_root, self.params["files"]["edmonton_geo"])
+        raw_data_path_2023 = os.path.join(self.params.project_root, self.params.food_drive_2023)
+        raw_data_path_2024 = os.path.join(self.params.project_root, self.params.food_drive_2024)
+        raw_data_path_geo = os.path.join(self.params.project_root, self.params.edmonton_geo)
 
         df_efd_2023 = pd.read_csv(raw_data_path_2023)
         df_efd_2024 = pd.read_csv(raw_data_path_2024, encoding='ISO-8859-1')
@@ -65,18 +64,17 @@ class DataLoader:
         df.to_csv(file_path, index=False)
         print(f"Data saved to {file_path}")
 
-        # Check if allow_data_file_track is set to 'On' before running DVC commands
-        if self.params["setup"]["allow_data_file_track"] == "On":
+        if self.params.allow_data_file_track == "On":
             try:
                 subprocess.run(['dvc', 'add', file_path], check=True)
-                subprocess.run(['git', 'add', os.path.join(self.project_root, 'data', 'processed.dvc')], check=True)
+                subprocess.run(['git', 'add', os.path.join(self.params.project_root, 'data', 'processed.dvc')], check=True)
                 subprocess.run(['dvc', 'config', 'core.autostage', 'true'], check=True)
                 subprocess.run(['dvc', 'push'], check=True)
                 print("Data pushed to DVC successfully!")
             except subprocess.CalledProcessError as e:
                 print(f"DVC push failed: {e}")
         else:
-            print("DVC tracking is disabled (allow_data_file_track is Off). Skipping DVC commands.")
+            print("DVC tracking is disabled (allow_data_file_track = 'Off'). Skipping DVC commands.")
 
 class DataCleaner:
     def __init__(self, df_efd_2023=None, df_efd_2024=None):

@@ -9,6 +9,12 @@ files:
   cleaned_data: "data/processed/EFD_Cleaned_dataset.csv"
 results:
   evaluation: "predict/evaluation.png"
+dvc:
+  gdrive_url: blank
+  gdrive_client_id: blank
+  gdrive_client_secret: blank
 setup:
   allow_data_file_track: "Off"
-  allow_ml_model_track: "Off"
+  allow_ml_model_track: "On"
+  mlflow_experiment_name: "EFD 2024 Model Experiment"
+  mlflow_experiment_url: "http://localhost:8080/"

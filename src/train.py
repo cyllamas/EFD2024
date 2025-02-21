@@ -7,7 +7,7 @@ import subprocess
 import mlflow
 import mlflow.sklearn
 import tempfile
-from utils.open_config import load_config
+from utils.open_config import get_default_params
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures
@@ -72,12 +72,17 @@ class Trainer:
             'copy_X': [True, False]
         }
         grid_search = GridSearchCV(estimator=LinearRegression(), param_grid=param_grid, cv=3, scoring='r2', n_jobs=-1)
-        grid_search.fit(X_train_poly, self.y_train)
-        self.best_model = grid_search.best_estimator_  
+        for i, params in enumerate(grid_search.param_grid.values()):
+            grid_search.fit(X_train_poly, self.y_train)
+            score = grid_search.best_score_
+            mlflow.log_metric("r2_score_hyperparameter_testing", score, step=i)
+            mlflow.log_param("best_fit_intercept", grid_search.best_estimator_.fit_intercept)
+            mlflow.log_param("best_copy_X", grid_search.best_estimator_.copy_X)
 
+        self.best_model = grid_search.best_estimator_  
         return self.best_model  
 
-    def save_train_config(self, config_path):
+    def save_train_config(self, config_path, flag):
         """
         Saves the best model's hyperparameters to a configuration file.
         """
@@ -98,9 +103,11 @@ class Trainer:
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, 'w') as f:
             yaml.dump(config_data, f)
-        mlflow.log_artifact(config_path)
+        
+        if flag == "On":
+            mlflow.log_artifact(config_path)
 
-    def save_model(self, model_path):
+    def save_model(self, model_path, flag):
         """
         Saves the trained model to a specified file path using pickle.
         """
@@ -137,21 +144,19 @@ class Trainer:
         })
 
         try:
-            #input_example = input_data[0]
-            mlflow.sklearn.log_model(polynomial_pipeline, "polynomial_regression_model", input_example=input_data)
+            if flag == "On":
+                mlflow.sklearn.log_model(polynomial_pipeline, "polynomial_regression_model", input_example=input_data)
+                mlflow.log_artifact(model_path)
         except Exception as e:
             print(f"An error occurred: {str(e)}")
-        #mlflow.sklearn.log_model(polynomial_pipeline, "polynomial_regression_model")
-        mlflow.log_artifact(model_path)
 
 if __name__ == "__main__":
     try:
         print('===================== Data Preparation Started! =====================')
-        params, project_root = load_config()
+        params = get_default_params()
 
         print('Performing Data Loading Process ...')
-        base_path = project_root
-        data_loader = DataLoader(params, project_root)
+        data_loader = DataLoader(params)
         df_efd_2023, df_efd_2024, df_edm_geo = data_loader.load_data()
 
         print(f"Shape of 2023 Data: {df_efd_2023.shape}")
@@ -174,8 +179,7 @@ if __name__ == "__main__":
         df_efd_cleaned = feature_engineer.feature_engineering()
 
         print('Performing Export of Cleaned Dataset Process ...')
-        #df_efd_cleaned.to_csv(os.path.join(base_path, params["files"]["cleaned_data"]))
-        data_loader.store_data(df_efd_cleaned, os.path.join(base_path, params["files"]["cleaned_data"]))
+        data_loader.store_data(df_efd_cleaned, os.path.join(params.project_root, params.cleaned_data))
         print('===================== Data Preparation Completed! =====================')
     except Exception as e:
         print(f"An error occurred during data preparation: {e}") 

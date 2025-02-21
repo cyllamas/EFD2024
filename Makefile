@@ -1,19 +1,16 @@
-# Project Variables
 VENV=.venv
 PYTHON=$(VENV)/bin/python
 PIP=$(VENV)/bin/pip
 DVC=.dvc
 
-# Create virtual environment
 init:
 	@echo "Creating virtual environment..."
 	python3 -m venv $(VENV)
 	@echo "Installing dependencies..."
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
-	@echo "Setup complete! Run 'source $(VENV)/bin/activate' to activate the environment."
-	@echo "Initializing DVC..."
-	$(VENV)/bin/dvc init 
+	@echo "Dependencies installed. Setup complete!"
+	@echo "To activate the virtual environment, run: source $(VENV)/bin/activate"
 
 train:
 	@echo "Running train.py..."
@@ -28,6 +25,17 @@ evaluate:
 predict:
 	@echo "Running tests..."
 	$(PYTHON) src/predict.py
+
+dvc:
+	@echo "Initializing DVC..."
+	$(VENV)/bin/dvc init 
+
+mlflow:
+	@echo "Starting MLflow server in the background..."
+	@echo "MLflow server is now running at http://127.0.0.1:8080"
+	@echo "To execute another command, open a new terminal window."
+	@echo "To stop the server, press Ctrl + C in this terminal to terminate the process."
+	@$(PYTHON) -m mlflow server --host 127.0.0.1 --port 8080 
 
 clean:
 	@echo "Cleaning up cache files..."

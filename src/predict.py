@@ -2,7 +2,7 @@ import pickle
 import pandas as pd
 import os
 import yaml
-from utils.open_config import load_config
+from utils.open_config import get_default_params
 
 class ModelPredictor:
     """
@@ -45,8 +45,8 @@ class ModelPredictor:
 if __name__ == "__main__":
     try:
         print('===================== Model Prediction Started! =====================')
-        params, project_root = load_config()
-        predictor = ModelPredictor(os.path.join(project_root, params["files"]["model"]))
+        params = get_default_params()
+        predictor = ModelPredictor(os.path.join(params.project_root, params.model))
 
         ward = "Beaumont Ward"
         time_spent = 5.0
