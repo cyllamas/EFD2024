@@ -134,13 +134,13 @@ class Trainer:
             pickle.dump(polynomial_pipeline, f)
 
         input_data = pd.DataFrame({
-            'Time Spent': [5.0],  # List format for single scalar value
-            'Number of Doors': [100.0],  # Converted to float
-            'Number of Routes': [10.0],  # Converted to float
+            'Time Spent': [5.0],  
+            'Number of Doors': [100.0],  
+            'Number of Routes': [10.0],  
             'Ward': ["Beaumont Ward"],
-            'Year': [2025.0],  # Converted to float
-            'Total Volunteers': [50.0],  # Converted to float
-            'Donation Bags per Door': [3.0]  # Converted to float
+            'Year': [2025.0],  
+            'Total Volunteers': [50.0],  
+            'Donation Bags per Door': [3.0] 
         })
 
         try:
