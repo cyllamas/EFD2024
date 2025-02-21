@@ -9,7 +9,6 @@ src/utils/__pycache__
 *.Identifier
 *.log
 *.tmp
-*.Identifier
 .dvc/
 mlruns/
 mlartifacts/
