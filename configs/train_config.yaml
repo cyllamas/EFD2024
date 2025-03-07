@@ -1,8 +1,16 @@
-hyperparameters:
+hyperparameters_poly:
   copy_X: true
   fit_intercept: true
   n_jobs: null
   positive: false
-model_specs:
+model_specs_poly:
   degree: 2
   model_type: Polynomial Regression
+
+hyperparameters_dt:
+  max_depth: null
+  min_samples_leaf: 4
+  min_samples_split: 2
+  random_state: 42
+model_specs_dt:
+  model_type: Decision Tree Regressor
