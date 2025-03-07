@@ -34,4 +34,4 @@ The current food donation management system in Edmonton faces challenges in coor
 - Kendrick Moreno - Team Member
 - Roe Alincastre - Team Member
 - Catrina Llamas - Team Member
-- Professor Uchenna Mgbaja - Faculty Advisor
+- Professor Uchenna Mgbaja - Faculty Advisor.
