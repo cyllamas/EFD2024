@@ -1,0 +1,9 @@
+{
+    "ward": "Beaumont Ward",
+    "time_spent": 5.0,
+    "num_doors": 100,
+    "num_routes": 10,
+    "year": 2024,
+    "total_volunteers": 50,
+    "bags_per_door": 3
+}
