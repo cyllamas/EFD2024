@@ -12,3 +12,4 @@ mlartifacts/
 *.tmp
 predict/
 *.Identifier
+configs/request.json
