@@ -46,7 +46,7 @@ if __name__ == "__main__":
     try:
         print('===================== Model Prediction Started! =====================')
         params = get_default_params()
-        predictor = ModelPredictor(os.path.join(params.project_root, params.model))
+        predictor = ModelPredictor(os.path.join(params.project_root, params.model_poly))
 
         ward = "Beaumont Ward"
         time_spent = 5.0
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         bags_per_door = 3
 
         prediction = predictor.predict_donations(ward, time_spent, num_doors, num_routes, year, total_volunteers, bags_per_door)
-        print(f"🛍️ Predicted Number of Donation Bags: {prediction}")
+        print(f"🛍️ Predicted Number of Donation Bags: {prediction}") 
         print('===================== Model Prediction Finished! =====================')
     except Exception as e:
         print(f"An error occurred: {e}")
