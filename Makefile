@@ -26,6 +26,10 @@ predict:
 	@echo "Running tests..."
 	$(PYTHON) src/predict.py
 
+predict_api:
+	@echo "Running predict_api.py for predictions via API..."
+	$(PYTHON) src/predict_api.py
+
 dvc:
 	@echo "Initializing DVC..."
 	$(VENV)/bin/dvc init 
@@ -46,8 +50,10 @@ clean:
 
 help:
 	@echo "Makefile commands:"
-	@echo "  make init      - Create virtual env and install dependencies"
-	@echo "  make train     - Run the training script"
-	@echo "  make evaluate  - Run the evaluation script"
-	@echo "  make predict   - Run the predict script"
-	@echo "  make clean     - Remove cache files and virtual environment"
+	@echo "  make init      	- Create virtual env and install dependencies"
+	@echo "  make train     	- Run the training script"
+	@echo "  make evaluate 	 	- Run the evaluation script"
+	@echo "  make predict   	- Run the predict script"
+	@echo "  make clean     	- Remove cache files and virtual environment"
+	@echo "  make predict_api 	- Run the API prediction script"
+	@echo "  make dvc         	- Initialize DVC environment"
