@@ -126,7 +126,6 @@ if __name__ == "__main__":
     try:
         print('===================== Model Development and Evaluation Started! =====================')
         params = get_default_params()
-        print("not ok")
         df_efd_cleaned = pd.read_csv(os.path.join(params.project_root, params.cleaned_data))
 
         print('Performing Data Splitting Process ...')
