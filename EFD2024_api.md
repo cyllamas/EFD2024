@@ -154,4 +154,4 @@ pip install pandas pyyaml Flask
 * Home Endpoint: `GET http://127.0.0.1:9000/efd2024_home`
 * Health Status: `GET http://127.0.0.1:9000/health_status`
 * Prediction (Polynomial Regression): `POST http://127.0.0.1:9000/v1/predict -H "Content-Type: application/json" -d @configs/request.json`
-* Prediction (Decision Tree): `POST http://127.0.0.1:9000/v1/predict -H "Content-Type: application/json" -d @configs/request.json`
+* Prediction (Decision Tree): `POST http://127.0.0.1:9000/v2/predict -H "Content-Type: application/json" -d @configs/request.json`
