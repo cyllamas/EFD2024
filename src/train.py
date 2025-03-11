@@ -14,6 +14,7 @@ from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
 from sklearn.model_selection import GridSearchCV
 from preprocess import DataLoader, DataCleaner, FeatureEngineer, DataMerger, DataSplitter
 
@@ -63,7 +64,7 @@ class Trainer:
         self.poly_reg.fit(X_train_poly, self.y_train)
         return X_train_poly, X_test_poly
 
-    def hyperparameter_tuning(self, X_train_poly):
+    def hyperparameter_tuning_poly(self, X_train_poly):
         """
         Performs hyperparameter tuning on the polynomial regression model using grid search.
         """
@@ -82,18 +83,18 @@ class Trainer:
         self.best_model = grid_search.best_estimator_  
         return self.best_model  
 
-    def save_train_config(self, config_path, flag):
+    def save_train_config_poly(self, config_path, flag):
         """
         Saves the best model's hyperparameters to a configuration file.
         """
         best_params = self.best_model.get_params()
         
         config_data = {
-            'model_specs': {
+            'model_specs_poly': {
                 'model_type': 'Polynomial Regression',  
                 'degree': 2  
             },
-            'hyperparameters': {
+            'hyperparameters_poly': {
                 'copy_X': best_params.get('copy_X', True),  
                 'fit_intercept': best_params.get('fit_intercept', True),  
                 'n_jobs': best_params.get('n_jobs', None),  
@@ -107,7 +108,7 @@ class Trainer:
         if flag == "On":
             mlflow.log_artifact(config_path)
 
-    def save_model(self, model_path, flag):
+    def save_model_poly(self, model_path, flag):
         """
         Saves the trained model to a specified file path using pickle.
         """
@@ -146,6 +147,108 @@ class Trainer:
         try:
             if flag == "On":
                 mlflow.sklearn.log_model(polynomial_pipeline, "polynomial_regression_model", input_example=input_data)
+                mlflow.log_artifact(model_path)
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+
+    def train_decision_tree(self, X_train_transformed, X_test_transformed):
+        """
+        Trains a decision tree model using the transformed data.
+        """
+        self.dt_reg = DecisionTreeRegressor(random_state=42)
+        self.dt_reg.fit(X_train_transformed, self.y_train)
+        return X_train_transformed, X_test_transformed
+
+    def hyperparameter_tuning_dt(self, X_train_dt):
+        """
+        Performs hyperparameter tuning on the decision trees model using grid search.
+        """
+        param_grid = {
+            'max_depth': [None, 5, 10, 15, 20],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4]
+        }
+        grid_search = GridSearchCV(estimator=DecisionTreeRegressor(random_state=42), param_grid=param_grid, cv=3, scoring='r2', n_jobs=-1)
+        grid_search.fit(X_train_dt, self.y_train)
+        best_params = grid_search.best_params_
+        best_score = grid_search.best_score_
+
+        mlflow.log_metric("r2_score_hyperparameter_testing", best_score)
+        for param_name, param_value in best_params.items():
+            mlflow.log_param(f"best_{param_name}", param_value)
+
+        self.best_model = grid_search.best_estimator_  
+        return self.best_model  
+
+    def save_train_config_dt(self, config_path, flag):
+        """
+        Saves the best model's hyperparameters to a configuration file.
+        """
+        best_params = self.best_model.get_params()
+
+        config_data = {
+            'model_specs_dt': {
+                'model_type': 'Decision Tree Regressor'
+            },
+            'hyperparameters_dt': {
+                'max_depth': best_params.get('max_depth', None),
+                'min_samples_split': best_params.get('min_samples_split', 2),
+                'min_samples_leaf': best_params.get('min_samples_leaf', 1),
+                'random_state': best_params.get('random_state', 42)
+            }
+        }
+
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        with open(config_path, 'a') as f:
+            f.write("\n")
+            yaml.dump(config_data, f)
+        
+        if flag == "On":
+            mlflow.log_artifact(config_path)
+
+    def save_model_dt(self, model_path, flag, max_depth, min_samples_leaf, min_samples_split, random_state):
+        """
+        Saves the trained model to a specified file path using pickle.
+        """
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', Pipeline(steps=[
+                    ('imputer', SimpleImputer(strategy='mean')),    
+                    ('scaler', StandardScaler())                   
+                ]), ['Number of Doors', 'Number of Routes', 'Year', 
+                    'Total Volunteers', 'Donation Bags per Door', 'Time Spent']),
+                ('cat', OneHotEncoder(handle_unknown='ignore'), ['Ward'])  
+            ]
+        )
+
+        dt_pipeline = Pipeline(steps=[
+            ('preprocessor', preprocessor),
+            ('regressor', DecisionTreeRegressor(
+                max_depth=max_depth, 
+                min_samples_leaf=min_samples_leaf, 
+                min_samples_split=min_samples_split, 
+                random_state=random_state
+            ))
+        ])
+
+        dt_pipeline.fit(self.X_train, self.y_train)
+
+        with open(model_path, 'wb') as f:
+            pickle.dump(dt_pipeline, f)
+
+        input_data = pd.DataFrame({
+            'Time Spent': [5.0],  
+            'Number of Doors': [100.0],  
+            'Number of Routes': [10.0],  
+            'Ward': ["Beaumont Ward"],
+            'Year': [2025.0],  
+            'Total Volunteers': [50.0],  
+            'Donation Bags per Door': [3.0] 
+        })
+
+        try:
+            if flag == "On":
+                mlflow.sklearn.log_model(dt_pipeline, "decision_tree_model", input_example=input_data)
                 mlflow.log_artifact(model_path)
         except Exception as e:
             print(f"An error occurred: {str(e)}")
